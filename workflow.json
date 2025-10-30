@@ -1,0 +1,508 @@
+{
+    "name": "My workflow 2",
+    "nodes": [
+      {
+        "parameters": {
+          "url": "=https://api.github.com/search/issues?q=repo:{{$json.owner.login}}/{{$json.name}}+is:pr&per_page=1\n\n\n\n",
+          "authentication": "genericCredentialType",
+          "genericAuthType": "httpBasicAuth",
+          "sendHeaders": true,
+          "headerParameters": {
+            "parameters": [
+              {
+                "name": "User-Agent",
+                "value": "n8n"
+              }
+            ]
+          },
+          "options": {
+            "response": {
+              "response": {
+                "responseFormat": "json"
+              }
+            }
+          }
+        },
+        "type": "n8n-nodes-base.httpRequest",
+        "typeVersion": 4.2,
+        "position": [
+          192,
+          0
+        ],
+        "id": "bb22112d-8271-4e36-b1ac-eb8b39280ecb",
+        "name": "Get PRs",
+        "alwaysOutputData": true,
+        "credentials": {
+          "httpBasicAuth": {
+            "id": "F6NLx9YpM827ddkP",
+            "name": "Unnamed credential 3"
+          }
+        }
+      },
+      {
+        "parameters": {
+          "mode": "runOnceForEachItem",
+          "jsCode": "\nconst SET_NODE   = \"Set Organization\";\nconst DEFAULT_TZ = \"Europe/Kyiv\";\n\nconst edit = $items(SET_NODE)?.[0]?.json ?? {};\nconst tz   = edit.tz ?? DEFAULT_TZ;\n\nconst baseTs  = edit.today ?? null;\nconst baseDate =\n  baseTs\n    ? (/^\\d{4}-\\d{2}-\\d{2}$/.test(baseTs)\n        ? new Date(`${baseTs}T00:00:00Z`)\n        : new Date(baseTs))\n    : new Date();\n\nconst date_utc = baseDate.toISOString().slice(0, 10);\nconst date_local = new Intl.DateTimeFormat(\"en-CA\", {\n  timeZone: tz, year: \"numeric\", month: \"2-digit\", day: \"2-digit\",\n}).format(baseDate);\nconst time_local = new Intl.DateTimeFormat(\"en-GB\", {\n  timeZone: tz, hour: \"2-digit\", minute: \"2-digit\", second: \"2-digit\", hour12: false,\n}).format(baseDate);\nconst datetime_utc   = baseDate.toISOString();\nconst datetime_local = `${date_local} ${time_local}`;\n\nconst repo = $(\"Loop: Each Repo\").item.json;\n\n/***********************\n * 4) PR з Get PRs\n ***********************/\nconst prSearch = $json; // результат з Get PRs\nconst all_pull_requests = Number(prSearch.total_count ?? 0);\n\n/***********************\n * 5) Повертаємо дані для Sheets\n ***********************/\nreturn {\n  date_utc,\n  date_local,\n  time_local,\n  datetime_utc,\n  datetime_local,\n  \n  org:                repo?.owner?.login ?? \"\",\n  repo_name:          repo?.name ?? \"\",\n  repo_url:           repo?.html_url ?? \"\",\n  description:        repo?.description ?? \"\",\n  language:           repo?.language ?? \"\",\n  \n  stars:              Number(repo?.stargazers_count ?? 0),\n  forks:              Number(repo?.forks_count ?? 0),\n  open_issues:        Number(repo?.open_issues_count ?? 0),\n  all_pull_requests,\n  \n  is_archived:        repo?.archived ?? false,\n  is_fork:            repo?.fork ?? false,\n  created_at:         repo?.created_at ?? \"\",\n  updated_at:         repo?.updated_at ?? \"\",\n  pushed_at:          repo?.pushed_at ?? \"\",\n};\n\n\n"
+        },
+        "type": "n8n-nodes-base.code",
+        "typeVersion": 2,
+        "position": [
+          336,
+          0
+        ],
+        "id": "e92391fb-1478-4b84-9518-b6aac59d57c5",
+        "name": "Format Data for Sheets",
+        "alwaysOutputData": false
+      },
+      {
+        "parameters": {
+          "operation": "append",
+          "documentId": {
+            "__rl": true,
+            "value": "1drjfdYYwMXIFbAlw1hc3n9J2srrrcWdKuFj6Dop2Mds",
+            "mode": "list",
+            "cachedResultName": "github_org_tracking",
+            "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1drjfdYYwMXIFbAlw1hc3n9J2srrrcWdKuFj6Dop2Mds/edit?usp=drivesdk"
+          },
+          "sheetName": {
+            "__rl": true,
+            "value": "gid=0",
+            "mode": "list",
+            "cachedResultName": "GitHubStats",
+            "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1drjfdYYwMXIFbAlw1hc3n9J2srrrcWdKuFj6Dop2Mds/edit#gid=0"
+          },
+          "columns": {
+            "mappingMode": "defineBelow",
+            "value": {
+              "org": "={{ $json.org }}",
+              "repo_name": "={{ $json.repo_name }}",
+              "repo_url": "={{ $json.repo_url }}",
+              "stars": "={{ $json.stars }}",
+              "open_issues": "={{ $json.open_issues }}",
+              "open_pull_request": "={{ $json.open_pull_requests }}",
+              "date_local": "={{ $json.date_local }}",
+              "time_local": "={{ $json.time_local }}",
+              "datetime_utc": "={{ $json.datetime_utc }}",
+              "datetime_local": "={{ $json.datetime_local }}",
+              "description": "={{ $json.description }}",
+              "language": "={{ $json.language }}",
+              "forks": "={{ $json.forks }}",
+              "all_pull_requests": "={{ $json.all_pull_requests }}",
+              "is_archived": "={{ $json.is_archived }}",
+              "created_at": "={{ $json.created_at }}"
+            },
+            "matchingColumns": [],
+            "schema": [
+              {
+                "id": "date_local",
+                "displayName": "date_local",
+                "required": false,
+                "defaultMatch": false,
+                "display": true,
+                "type": "string",
+                "canBeUsedToMatch": true,
+                "removed": false
+              },
+              {
+                "id": "time_local",
+                "displayName": "time_local",
+                "required": false,
+                "defaultMatch": false,
+                "display": true,
+                "type": "string",
+                "canBeUsedToMatch": true,
+                "removed": false
+              },
+              {
+                "id": "datetime_utc",
+                "displayName": "datetime_utc",
+                "required": false,
+                "defaultMatch": false,
+                "display": true,
+                "type": "string",
+                "canBeUsedToMatch": true,
+                "removed": false
+              },
+              {
+                "id": "datetime_local",
+                "displayName": "datetime_local",
+                "required": false,
+                "defaultMatch": false,
+                "display": true,
+                "type": "string",
+                "canBeUsedToMatch": true,
+                "removed": false
+              },
+              {
+                "id": "org",
+                "displayName": "org",
+                "required": false,
+                "defaultMatch": false,
+                "display": true,
+                "type": "string",
+                "canBeUsedToMatch": true
+              },
+              {
+                "id": "repo_name",
+                "displayName": "repo_name",
+                "required": false,
+                "defaultMatch": false,
+                "display": true,
+                "type": "string",
+                "canBeUsedToMatch": true
+              },
+              {
+                "id": "repo_url",
+                "displayName": "repo_url",
+                "required": false,
+                "defaultMatch": false,
+                "display": true,
+                "type": "string",
+                "canBeUsedToMatch": true
+              },
+              {
+                "id": "description",
+                "displayName": "description",
+                "required": false,
+                "defaultMatch": false,
+                "display": true,
+                "type": "string",
+                "canBeUsedToMatch": true,
+                "removed": false
+              },
+              {
+                "id": "language",
+                "displayName": "language",
+                "required": false,
+                "defaultMatch": false,
+                "display": true,
+                "type": "string",
+                "canBeUsedToMatch": true,
+                "removed": false
+              },
+              {
+                "id": "forks",
+                "displayName": "forks",
+                "required": false,
+                "defaultMatch": false,
+                "display": true,
+                "type": "string",
+                "canBeUsedToMatch": true,
+                "removed": false
+              },
+              {
+                "id": "all_pull_requests",
+                "displayName": "all_pull_requests",
+                "required": false,
+                "defaultMatch": false,
+                "display": true,
+                "type": "string",
+                "canBeUsedToMatch": true,
+                "removed": false
+              },
+              {
+                "id": "is_archived",
+                "displayName": "is_archived",
+                "required": false,
+                "defaultMatch": false,
+                "display": true,
+                "type": "string",
+                "canBeUsedToMatch": true,
+                "removed": false
+              },
+              {
+                "id": "stars",
+                "displayName": "stars",
+                "required": false,
+                "defaultMatch": false,
+                "display": true,
+                "type": "string",
+                "canBeUsedToMatch": true
+              },
+              {
+                "id": "open_issues",
+                "displayName": "open_issues",
+                "required": false,
+                "defaultMatch": false,
+                "display": true,
+                "type": "string",
+                "canBeUsedToMatch": true
+              },
+              {
+                "id": "open_pull_request",
+                "displayName": "open_pull_request",
+                "required": false,
+                "defaultMatch": false,
+                "display": true,
+                "type": "string",
+                "canBeUsedToMatch": true
+              },
+              {
+                "id": "created_at",
+                "displayName": "created_at",
+                "required": false,
+                "defaultMatch": false,
+                "display": true,
+                "type": "string",
+                "canBeUsedToMatch": true,
+                "removed": false
+              }
+            ],
+            "attemptToConvertTypes": false,
+            "convertFieldsToString": false
+          },
+          "options": {}
+        },
+        "type": "n8n-nodes-base.googleSheets",
+        "typeVersion": 4.7,
+        "position": [
+          528,
+          0
+        ],
+        "id": "84ae2c44-b8c7-489a-81d6-98279520c5bb",
+        "name": "Append to Stats Sheet",
+        "credentials": {
+          "googleSheetsOAuth2Api": {
+            "id": "avxLYk12VNQtkXF0",
+            "name": "Google Sheets account 2"
+          }
+        }
+      },
+      {
+        "parameters": {
+          "options": {}
+        },
+        "type": "n8n-nodes-base.splitInBatches",
+        "typeVersion": 3,
+        "position": [
+          -16,
+          0
+        ],
+        "id": "60f8964d-cc9e-41de-811a-9ef24f5d8479",
+        "name": "Loop: Each Repo"
+      },
+      {
+        "parameters": {
+          "url": "=https://api.github.com/orgs/{{$json.org_name}}/repos?per_page=100&type=public",
+          "authentication": "genericCredentialType",
+          "genericAuthType": "httpBasicAuth",
+          "sendHeaders": true,
+          "headerParameters": {
+            "parameters": [
+              {
+                "name": "User-Agent",
+                "value": "n8n-workflow"
+              }
+            ]
+          },
+          "options": {
+            "pagination": {
+              "pagination": {
+                "parameters": {
+                  "parameters": [
+                    {
+                      "name": "page",
+                      "value": "={{ $pageCount + 1 }}"
+                    }
+                  ]
+                },
+                "paginationCompleteWhen": "other",
+                "completeExpression": "={{ $response.body.length < 100 }}",
+                "limitPagesFetched": true,
+                "maxRequests": 20,
+                "requestInterval": 100
+              }
+            }
+          }
+        },
+        "type": "n8n-nodes-base.httpRequest",
+        "typeVersion": 4.2,
+        "position": [
+          -192,
+          0
+        ],
+        "id": "6b1017a0-e642-4617-8f21-60a75cd1f79a",
+        "name": "Get All Repos",
+        "credentials": {
+          "httpBasicAuth": {
+            "id": "F6NLx9YpM827ddkP",
+            "name": "Unnamed credential 3"
+          }
+        }
+      },
+      {
+        "parameters": {
+          "assignments": {
+            "assignments": [
+              {
+                "id": "31e6ac30-e77c-4991-b8af-1a51490c034d",
+                "name": "org_name",
+                "value": "openai",
+                "type": "string"
+              },
+              {
+                "id": "640f74f2-e4c3-4964-9ff7-a96ef5cf542a",
+                "name": "today",
+                "value": "={{ new Date().toISOString() }}",
+                "type": "string"
+              },
+              {
+                "id": "cfa6b174-59b7-4be7-a7e6-2dbbab50abc8",
+                "name": "spreadsheetId",
+                "value": "1drjfdYYwMXIFbAlw1hc3n9J2srrrcWdKuFj6Dop2Mds",
+                "type": "string"
+              },
+              {
+                "id": "d4a7397b-25da-48ad-ae6d-bd38d0cd81a8",
+                "name": "sheetName",
+                "value": "GitHubStats",
+                "type": "string"
+              }
+            ]
+          },
+          "options": {}
+        },
+        "type": "n8n-nodes-base.set",
+        "typeVersion": 3.4,
+        "position": [
+          -336,
+          0
+        ],
+        "id": "5e174a38-9332-4065-b81c-28715c800070",
+        "name": "Set Organization"
+      },
+      {
+        "parameters": {
+          "rule": {
+            "interval": [
+              {
+                "triggerAtHour": 9
+              }
+            ]
+          }
+        },
+        "type": "n8n-nodes-base.scheduleTrigger",
+        "typeVersion": 1.2,
+        "position": [
+          -512,
+          -48
+        ],
+        "id": "56b22ee9-96ed-47d9-94a2-cb5f9831d794",
+        "name": "Daily at 9 AM"
+      },
+      {
+        "parameters": {},
+        "type": "n8n-nodes-base.manualTrigger",
+        "typeVersion": 1,
+        "position": [
+          -512,
+          80
+        ],
+        "id": "78af66c9-13c0-4f3d-8117-b611f74854b1",
+        "name": "Manual Run"
+      }
+    ],
+    "pinData": {},
+    "connections": {
+      "Get PRs": {
+        "main": [
+          [
+            {
+              "node": "Format Data for Sheets",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Format Data for Sheets": {
+        "main": [
+          [
+            {
+              "node": "Append to Stats Sheet",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Append to Stats Sheet": {
+        "main": [
+          [
+            {
+              "node": "Loop: Each Repo",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Loop: Each Repo": {
+        "main": [
+          [],
+          [
+            {
+              "node": "Get PRs",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Get All Repos": {
+        "main": [
+          [
+            {
+              "node": "Loop: Each Repo",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Set Organization": {
+        "main": [
+          [
+            {
+              "node": "Get All Repos",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Daily at 9 AM": {
+        "main": [
+          [
+            {
+              "node": "Set Organization",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Manual Run": {
+        "main": [
+          [
+            {
+              "node": "Set Organization",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      }
+    },
+    "active": false,
+    "settings": {
+      "executionOrder": "v1"
+    },
+    "versionId": "d4105b72-146a-4795-b4e5-cf89c6e1bfdb",
+    "meta": {
+      "templateCredsSetupCompleted": true,
+      "instanceId": "a3454fa22d7fc22b5d01c3a9035064d378358941f7e30fabf38b880268e23205"
+    },
+    "id": "JbJ6J7g0P1EwF0Gj",
+    "tags": []
+  }
