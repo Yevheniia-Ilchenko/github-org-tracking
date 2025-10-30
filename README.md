@@ -32,8 +32,8 @@ Check out the [live dashboard](https://docs.google.com/spreadsheets/d/1drjfdYYwM
 **Statistics collected for 150+ repositories of OpenAI organization:**
 - 📦 Repositories processed: **200+**
 - ⭐ Total stars: **600 000+**
-- 🐛 Open issues: **1,234**
-- 🔀 Pull requests: **5,678**
+- 🐛 Open issues: **7 600+**
+- 🔀 Pull requests: **16 900+**
 
 ## 🚀 Quick Start
 
@@ -93,6 +93,8 @@ Click **Execute Workflow** and watch the data appear in Google Sheets! 🎉
 🔁 Loop Each Repo
    ↓
 🔍 Count PRs
+   ↓
+   Wait
    ↓
 ⚡ Format Data
    ↓
