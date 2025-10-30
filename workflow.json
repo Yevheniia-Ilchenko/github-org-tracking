@@ -2,57 +2,56 @@
     "name": "My workflow 2",
     "nodes": [
       {
-        "parameters": {
-          "url": "=https://api.github.com/search/issues?q=repo:{{$json.owner.login}}/{{$json.name}}+is:pr&per_page=1\n\n\n\n",
-          "authentication": "genericCredentialType",
-          "genericAuthType": "httpBasicAuth",
-          "sendHeaders": true,
-          "headerParameters": {
-            "parameters": [
-              {
-                "name": "User-Agent",
-                "value": "n8n"
-              }
-            ]
-          },
-          "options": {
-            "response": {
-              "response": {
-                "responseFormat": "json"
-              }
-            }
-          }
-        },
-        "type": "n8n-nodes-base.httpRequest",
-        "typeVersion": 4.2,
+        "parameters": {},
+        "type": "n8n-nodes-base.manualTrigger",
+        "typeVersion": 1,
         "position": [
-          192,
+          -512,
           0
         ],
-        "id": "bb22112d-8271-4e36-b1ac-eb8b39280ecb",
-        "name": "Get PRs",
-        "alwaysOutputData": true,
-        "credentials": {
-          "httpBasicAuth": {
-            "id": "F6NLx9YpM827ddkP",
-            "name": "Unnamed credential 3"
-          }
-        }
+        "id": "78af66c9-13c0-4f3d-8117-b611f74854b1",
+        "name": "When clicking ‘Execute workflow’"
       },
       {
         "parameters": {
-          "mode": "runOnceForEachItem",
-          "jsCode": "\nconst SET_NODE   = \"Set Organization\";\nconst DEFAULT_TZ = \"Europe/Kyiv\";\n\nconst edit = $items(SET_NODE)?.[0]?.json ?? {};\nconst tz   = edit.tz ?? DEFAULT_TZ;\n\nconst baseTs  = edit.today ?? null;\nconst baseDate =\n  baseTs\n    ? (/^\\d{4}-\\d{2}-\\d{2}$/.test(baseTs)\n        ? new Date(`${baseTs}T00:00:00Z`)\n        : new Date(baseTs))\n    : new Date();\n\nconst date_utc = baseDate.toISOString().slice(0, 10);\nconst date_local = new Intl.DateTimeFormat(\"en-CA\", {\n  timeZone: tz, year: \"numeric\", month: \"2-digit\", day: \"2-digit\",\n}).format(baseDate);\nconst time_local = new Intl.DateTimeFormat(\"en-GB\", {\n  timeZone: tz, hour: \"2-digit\", minute: \"2-digit\", second: \"2-digit\", hour12: false,\n}).format(baseDate);\nconst datetime_utc   = baseDate.toISOString();\nconst datetime_local = `${date_local} ${time_local}`;\n\nconst repo = $(\"Loop: Each Repo\").item.json;\n\n/***********************\n * 4) PR з Get PRs\n ***********************/\nconst prSearch = $json; // результат з Get PRs\nconst all_pull_requests = Number(prSearch.total_count ?? 0);\n\n/***********************\n * 5) Повертаємо дані для Sheets\n ***********************/\nreturn {\n  date_utc,\n  date_local,\n  time_local,\n  datetime_utc,\n  datetime_local,\n  \n  org:                repo?.owner?.login ?? \"\",\n  repo_name:          repo?.name ?? \"\",\n  repo_url:           repo?.html_url ?? \"\",\n  description:        repo?.description ?? \"\",\n  language:           repo?.language ?? \"\",\n  \n  stars:              Number(repo?.stargazers_count ?? 0),\n  forks:              Number(repo?.forks_count ?? 0),\n  open_issues:        Number(repo?.open_issues_count ?? 0),\n  all_pull_requests,\n  \n  is_archived:        repo?.archived ?? false,\n  is_fork:            repo?.fork ?? false,\n  created_at:         repo?.created_at ?? \"\",\n  updated_at:         repo?.updated_at ?? \"\",\n  pushed_at:          repo?.pushed_at ?? \"\",\n};\n\n\n"
+          "assignments": {
+            "assignments": [
+              {
+                "id": "31e6ac30-e77c-4991-b8af-1a51490c034d",
+                "name": "org_name",
+                "value": "openai",
+                "type": "string"
+              },
+              {
+                "id": "640f74f2-e4c3-4964-9ff7-a96ef5cf542a",
+                "name": "today",
+                "value": "={{ new Date().toISOString() }}",
+                "type": "string"
+              },
+              {
+                "id": "cfa6b174-59b7-4be7-a7e6-2dbbab50abc8",
+                "name": "spreadsheetId",
+                "value": "1drjfdYYwMXIFbAlw1hc3n9J2srrrcWdKuFj6Dop2Mds",
+                "type": "string"
+              },
+              {
+                "id": "d4a7397b-25da-48ad-ae6d-bd38d0cd81a8",
+                "name": "sheetName",
+                "value": "GitHubStats",
+                "type": "string"
+              }
+            ]
+          },
+          "options": {}
         },
-        "type": "n8n-nodes-base.code",
-        "typeVersion": 2,
+        "type": "n8n-nodes-base.set",
+        "typeVersion": 3.4,
         "position": [
-          336,
+          -256,
           0
         ],
-        "id": "e92391fb-1478-4b84-9518-b6aac59d57c5",
-        "name": "Format Data for Sheets",
-        "alwaysOutputData": false
+        "id": "5e174a38-9332-4065-b81c-28715c800070",
+        "name": "Edit Fields"
       },
       {
         "parameters": {
@@ -79,7 +78,6 @@
               "repo_url": "={{ $json.repo_url }}",
               "stars": "={{ $json.stars }}",
               "open_issues": "={{ $json.open_issues }}",
-              "open_pull_request": "={{ $json.open_pull_requests }}",
               "date_local": "={{ $json.date_local }}",
               "time_local": "={{ $json.time_local }}",
               "datetime_utc": "={{ $json.datetime_utc }}",
@@ -89,7 +87,10 @@
               "forks": "={{ $json.forks }}",
               "all_pull_requests": "={{ $json.all_pull_requests }}",
               "is_archived": "={{ $json.is_archived }}",
-              "created_at": "={{ $json.created_at }}"
+              "created_at": "={{ $json.created_at }}",
+              "updated_at": "={{ $json.updated_at }}",
+              "pushed_at": "={{ $json.pushed_at }}",
+              "is_fork": "={{ $json.is_fork }}"
             },
             "matchingColumns": [],
             "schema": [
@@ -191,16 +192,6 @@
                 "removed": false
               },
               {
-                "id": "all_pull_requests",
-                "displayName": "all_pull_requests",
-                "required": false,
-                "defaultMatch": false,
-                "display": true,
-                "type": "string",
-                "canBeUsedToMatch": true,
-                "removed": false
-              },
-              {
                 "id": "is_archived",
                 "displayName": "is_archived",
                 "required": false,
@@ -229,17 +220,68 @@
                 "canBeUsedToMatch": true
               },
               {
-                "id": "open_pull_request",
-                "displayName": "open_pull_request",
+                "id": "created_at",
+                "displayName": "created_at",
                 "required": false,
                 "defaultMatch": false,
                 "display": true,
                 "type": "string",
-                "canBeUsedToMatch": true
+                "canBeUsedToMatch": true,
+                "removed": false
+              },
+              {
+                "id": "all_pull_requests",
+                "displayName": "all_pull_requests",
+                "required": false,
+                "defaultMatch": false,
+                "display": true,
+                "type": "string",
+                "canBeUsedToMatch": true,
+                "removed": false
+              },
+              {
+                "id": "is_archived",
+                "displayName": "is_archived",
+                "required": false,
+                "defaultMatch": false,
+                "display": true,
+                "type": "string",
+                "canBeUsedToMatch": true,
+                "removed": false
+              },
+              {
+                "id": "is_fork",
+                "displayName": "is_fork",
+                "required": false,
+                "defaultMatch": false,
+                "display": true,
+                "type": "string",
+                "canBeUsedToMatch": true,
+                "removed": false
               },
               {
                 "id": "created_at",
                 "displayName": "created_at",
+                "required": false,
+                "defaultMatch": false,
+                "display": true,
+                "type": "string",
+                "canBeUsedToMatch": true,
+                "removed": false
+              },
+              {
+                "id": "updated_at",
+                "displayName": "updated_at",
+                "required": false,
+                "defaultMatch": false,
+                "display": true,
+                "type": "string",
+                "canBeUsedToMatch": true,
+                "removed": false
+              },
+              {
+                "id": "pushed_at",
+                "displayName": "pushed_at",
                 "required": false,
                 "defaultMatch": false,
                 "display": true,
@@ -256,11 +298,11 @@
         "type": "n8n-nodes-base.googleSheets",
         "typeVersion": 4.7,
         "position": [
-          528,
+          832,
           0
         ],
         "id": "84ae2c44-b8c7-489a-81d6-98279520c5bb",
-        "name": "Append to Stats Sheet",
+        "name": "Append row in sheet",
         "credentials": {
           "googleSheetsOAuth2Api": {
             "id": "avxLYk12VNQtkXF0",
@@ -270,16 +312,22 @@
       },
       {
         "parameters": {
-          "options": {}
+          "rule": {
+            "interval": [
+              {
+                "triggerAtHour": 9
+              }
+            ]
+          }
         },
-        "type": "n8n-nodes-base.splitInBatches",
-        "typeVersion": 3,
+        "type": "n8n-nodes-base.scheduleTrigger",
+        "typeVersion": 1.2,
         "position": [
-          -16,
-          0
+          -496,
+          -144
         ],
-        "id": "60f8964d-cc9e-41de-811a-9ef24f5d8479",
-        "name": "Loop: Each Repo"
+        "id": "56b22ee9-96ed-47d9-94a2-cb5f9831d794",
+        "name": "Schedule Trigger"
       },
       {
         "parameters": {
@@ -318,126 +366,147 @@
         "type": "n8n-nodes-base.httpRequest",
         "typeVersion": 4.2,
         "position": [
-          -192,
+          -96,
           0
         ],
         "id": "6b1017a0-e642-4617-8f21-60a75cd1f79a",
-        "name": "Get All Repos",
+        "name": "Get repos",
         "credentials": {
           "httpBasicAuth": {
-            "id": "F6NLx9YpM827ddkP",
-            "name": "Unnamed credential 3"
+            "id": "zyJ5Y6qcgFtrN3rS",
+            "name": "Unnamed credential 5"
           }
         }
       },
       {
         "parameters": {
-          "assignments": {
-            "assignments": [
-              {
-                "id": "31e6ac30-e77c-4991-b8af-1a51490c034d",
-                "name": "org_name",
-                "value": "openai",
-                "type": "string"
-              },
-              {
-                "id": "640f74f2-e4c3-4964-9ff7-a96ef5cf542a",
-                "name": "today",
-                "value": "={{ new Date().toISOString() }}",
-                "type": "string"
-              },
-              {
-                "id": "cfa6b174-59b7-4be7-a7e6-2dbbab50abc8",
-                "name": "spreadsheetId",
-                "value": "1drjfdYYwMXIFbAlw1hc3n9J2srrrcWdKuFj6Dop2Mds",
-                "type": "string"
-              },
-              {
-                "id": "d4a7397b-25da-48ad-ae6d-bd38d0cd81a8",
-                "name": "sheetName",
-                "value": "GitHubStats",
-                "type": "string"
-              }
-            ]
-          },
           "options": {}
         },
-        "type": "n8n-nodes-base.set",
-        "typeVersion": 3.4,
+        "type": "n8n-nodes-base.splitInBatches",
+        "typeVersion": 3,
         "position": [
-          -336,
+          112,
           0
         ],
-        "id": "5e174a38-9332-4065-b81c-28715c800070",
-        "name": "Set Organization"
+        "id": "60f8964d-cc9e-41de-811a-9ef24f5d8479",
+        "name": "Loop Over Items"
       },
       {
         "parameters": {
-          "rule": {
-            "interval": [
+          "url": "=https://api.github.com/search/issues?q=repo:{{$json.owner.login}}/{{$json.name}}+is:pr&per_page=1\n\n\n\n",
+          "authentication": "genericCredentialType",
+          "genericAuthType": "httpBasicAuth",
+          "sendHeaders": true,
+          "headerParameters": {
+            "parameters": [
               {
-                "triggerAtHour": 9
+                "name": "User-Agent",
+                "value": "n8n"
               }
             ]
+          },
+          "options": {
+            "batching": {
+              "batch": {
+                "batchSize": 25,
+                "batchInterval": 60000
+              }
+            }
           }
         },
-        "type": "n8n-nodes-base.scheduleTrigger",
-        "typeVersion": 1.2,
+        "type": "n8n-nodes-base.httpRequest",
+        "typeVersion": 4.2,
         "position": [
-          -512,
-          -48
+          432,
+          0
         ],
-        "id": "56b22ee9-96ed-47d9-94a2-cb5f9831d794",
-        "name": "Daily at 9 AM"
+        "id": "bb22112d-8271-4e36-b1ac-eb8b39280ecb",
+        "name": "Get PRs",
+        "alwaysOutputData": true,
+        "credentials": {
+          "httpBasicAuth": {
+            "id": "zyJ5Y6qcgFtrN3rS",
+            "name": "Unnamed credential 5"
+          }
+        }
       },
       {
-        "parameters": {},
-        "type": "n8n-nodes-base.manualTrigger",
-        "typeVersion": 1,
+        "parameters": {
+          "mode": "runOnceForEachItem",
+          "jsCode": "/***********************\n * CONFIG\n ***********************/\nconst SET_NODE   = \"Edit Fields\";\nconst DEFAULT_TZ = \"Europe/Kyiv\";\n\n/***********************\n * 1) Дані з Set/Edit Fields\n ***********************/\nconst edit = $items(SET_NODE)?.[0]?.json ?? {};\nconst tz   = edit.tz ?? DEFAULT_TZ;\n\nconst baseTs  = edit.today ?? null;\nconst baseDate =\n  baseTs\n    ? (/^\\d{4}-\\d{2}-\\d{2}$/.test(baseTs)\n        ? new Date(`${baseTs}T00:00:00Z`)\n        : new Date(baseTs))\n    : new Date();\n\n/***********************\n * 2) Поля часу\n ***********************/\nconst date_utc = baseDate.toISOString().slice(0, 10);\nconst date_local = new Intl.DateTimeFormat(\"en-CA\", {\n  timeZone: tz, year: \"numeric\", month: \"2-digit\", day: \"2-digit\",\n}).format(baseDate);\nconst time_local = new Intl.DateTimeFormat(\"en-GB\", {\n  timeZone: tz, hour: \"2-digit\", minute: \"2-digit\", second: \"2-digit\", hour12: false,\n}).format(baseDate);\nconst datetime_utc   = baseDate.toISOString();\nconst datetime_local = `${date_local} ${time_local}`;\n\n/***********************\n * 3) Репо з Loop Over Items\n ***********************/\nconst repo = $(\"Loop Over Items\").item.json;\n\n/***********************\n * 4) PR з Get PRs\n ***********************/\nconst prSearch = $json; // результат з Get PRs\nconst all_pull_requests = Number(prSearch.total_count ?? 0);\n\n/***********************\n * 5) Повертаємо дані для Sheets\n ***********************/\nreturn {\n  date_utc,\n  date_local,\n  time_local,\n  datetime_utc,\n  datetime_local,\n  \n  org:                repo?.owner?.login ?? \"\",\n  repo_name:          repo?.name ?? \"\",\n  repo_url:           repo?.html_url ?? \"\",\n  description:        repo?.description ?? \"\",\n  language:           repo?.language ?? \"\",\n  \n  stars:              Number(repo?.stargazers_count ?? 0),\n  forks:              Number(repo?.forks_count ?? 0),\n  open_issues:        Number(repo?.open_issues_count ?? 0),\n  all_pull_requests,\n  \n  is_archived:        repo?.archived ?? false,\n  is_fork:            repo?.fork ?? false,\n  created_at:         repo?.created_at ?? \"\",\n  updated_at:         repo?.updated_at ?? \"\",\n  pushed_at:          repo?.pushed_at ?? \"\",\n};\n\n\n"
+        },
+        "type": "n8n-nodes-base.code",
+        "typeVersion": 2,
         "position": [
-          -512,
-          80
+          672,
+          0
         ],
-        "id": "78af66c9-13c0-4f3d-8117-b611f74854b1",
-        "name": "Manual Run"
+        "id": "e92391fb-1478-4b84-9518-b6aac59d57c5",
+        "name": "Code in JavaScript",
+        "alwaysOutputData": false
+      },
+      {
+        "parameters": {
+          "amount": 3
+        },
+        "type": "n8n-nodes-base.wait",
+        "typeVersion": 1.1,
+        "position": [
+          560,
+          0
+        ],
+        "id": "18543571-d49f-4921-a009-b7d21e5b242c",
+        "name": "Wait",
+        "webhookId": "c4ace7c3-da80-4601-bbdc-37a802ebf38f"
       }
     ],
     "pinData": {},
     "connections": {
-      "Get PRs": {
+      "When clicking ‘Execute workflow’": {
         "main": [
           [
             {
-              "node": "Format Data for Sheets",
+              "node": "Edit Fields",
               "type": "main",
               "index": 0
             }
           ]
         ]
       },
-      "Format Data for Sheets": {
+      "Edit Fields": {
         "main": [
           [
             {
-              "node": "Append to Stats Sheet",
+              "node": "Get repos",
               "type": "main",
               "index": 0
             }
           ]
         ]
       },
-      "Append to Stats Sheet": {
+      "Schedule Trigger": {
         "main": [
           [
             {
-              "node": "Loop: Each Repo",
+              "node": "Edit Fields",
               "type": "main",
               "index": 0
             }
           ]
         ]
       },
-      "Loop: Each Repo": {
+      "Get repos": {
+        "main": [
+          [
+            {
+              "node": "Loop Over Items",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Loop Over Items": {
         "main": [
           [],
           [
@@ -449,44 +518,44 @@
           ]
         ]
       },
-      "Get All Repos": {
+      "Append row in sheet": {
         "main": [
           [
             {
-              "node": "Loop: Each Repo",
+              "node": "Loop Over Items",
               "type": "main",
               "index": 0
             }
           ]
         ]
       },
-      "Set Organization": {
+      "Get PRs": {
         "main": [
           [
             {
-              "node": "Get All Repos",
+              "node": "Wait",
               "type": "main",
               "index": 0
             }
           ]
         ]
       },
-      "Daily at 9 AM": {
+      "Code in JavaScript": {
         "main": [
           [
             {
-              "node": "Set Organization",
+              "node": "Append row in sheet",
               "type": "main",
               "index": 0
             }
           ]
         ]
       },
-      "Manual Run": {
+      "Wait": {
         "main": [
           [
             {
-              "node": "Set Organization",
+              "node": "Code in JavaScript",
               "type": "main",
               "index": 0
             }
@@ -498,7 +567,7 @@
     "settings": {
       "executionOrder": "v1"
     },
-    "versionId": "d4105b72-146a-4795-b4e5-cf89c6e1bfdb",
+    "versionId": "fb45caa6-24f1-4f85-8b5a-89903983fb13",
     "meta": {
       "templateCredsSetupCompleted": true,
       "instanceId": "a3454fa22d7fc22b5d01c3a9035064d378358941f7e30fabf38b880268e23205"
