@@ -26,6 +26,8 @@ This workflow automatically collects data for each public repository in an organ
 ### Google Sheets Dashboard:
 ![Dashboard](images/google_sheets.png)
 
+Check out the [live dashboard](https://docs.google.com/spreadsheets/d/1drjfdYYwMXIFbAlw1hc3n9J2srrrcWdKuFj6Dop2Mds/edit?gid=0#gid=0) with real-time data.
+
 
 **Statistics collected for 150+ repositories of OpenAI organization:**
 - 📦 Repositories processed: **200+**
